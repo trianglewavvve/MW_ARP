@@ -11,6 +11,9 @@ from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
 
+row=0
+column=1
+
 midiuart = busio.UART(board.SDA, board.SCL, baudrate=31250)
 
 #midi_mode = True
@@ -86,20 +89,15 @@ for v in range(4):
     #trellis.pixels[(v, 0)] = DRUM_COLOR[v]
     wave_file = open(VOICES[v], "rb")
     # OK we managed to open the wave OK
-    #for x in range(1, 4):
-#        trellis.pixels[(v, x)] = DRUM_COLOR[v]
     sample = audioio.WaveFile(wave_file)
-    # debug play back on load!
-    #mixer.play(sample, voice=0)
-#    for x in range(4, 7):
-#        trellis.pixels[(v, x)] = DRUM_COLOR[v]
     while mixer.playing:
         pass
-#    trellis.pixels[(v, 7)] = DRUM_COLOR[v]
     samples.append(sample)
 # Clear all pixels
 trellis.pixels.fill(0)
 # Our global state
+
+
 current_step = 7 # we actually start on the last step since we increment first
 # the state of the sequencer
 beatset = [[False] * 8, [False] * 8, [False] * 8, [False] * 8]
@@ -130,36 +128,66 @@ while True:
     while time.monotonic() - stamp < 60/tempo:
         # Check for pressed buttons
         pressed = set(trellis.pressed_keys)
-        for step in step_list: 
-            if step in pressed:
-                trellis.pixels[step] = ACTIVE_COLOR
-            else:
-                trellis.pixels[step] = INACTIVE_COLOR
+        #disabled temporarily for troubleshooting, this is needed to have background color display on startup
+        #for step in step_list: 
+        #    if step in pressed:
+        #        trellis.pixels[step] = ACTIVE_COLOR
+        #    else:
+        #        trellis.pixels[step] = INACTIVE_COLOR
      
   
         pressed_list=list(pressed)
         if len(pressed_list)>1:
+            print(pressed_list)
             line=[]
             path=[]
-            if pressed_list[0][1]<pressed_list[1][1]:
-                for step in range(pressed_list[0][1], pressed_list[1][1]+1):
-                    line.append((pressed_list[0][0], step))
+            first_press=0
+            second_press=1
+
+            #
+            if pressed_list[first_press][column]==pressed_list[second_press][column]:
+                path.append(pressed_list[first_press])
+                pass
+                print('pass')
+            elif pressed_list[first_press][column]<pressed_list[second_press][column]:    
+                print('problems in first column condition')
+                for step in range(pressed_list[first_press][column], pressed_list[second_press][column]+1):
+                    line.append((pressed_list[first_press][row], step))
                 path=line
+                
             else:
-                for step in range(pressed_list[1][1], pressed_list[0][1]+1):
-                    line.append((pressed_list[0][0], step))
+                print('problems in second column condition')
+                for step in range(pressed_list[second_press][column], pressed_list[first_press][column]+1):
+                    line.append((pressed_list[first_press][row], step))
                 path=sorted(line, reverse=True)
+                
+                #last_point=(pressed_list[first_press][row], step)
+                #print(last_point)
+                
+                
+            print(path)
+            last_point=path[-1]
             line=[]
-            if pressed_list[0][0] < pressed_list[1][0]:
-                for step in range(pressed_list[0][0]+1, pressed_list[1][0]+1):
-                    line.append((step, pressed_list[1][1]))
+
+            if pressed_list[first_press][row] == pressed_list[second_press][row]:
+                pass
+            elif pressed_list[first_press][row] < pressed_list[1][row]:
+                print('problems in first row condition')
+                for step in range(pressed_list[first_press][row]+1, pressed_list[second_press][row]+1):
+                    line.append((step, pressed_list[second_press][column]))
                 path+=line
+                
             else:
-                for step in range(pressed_list[1][0]+1, pressed_list[0][0]+1):    
-                    line.append((pressed_list[0][0], step))    
+                print('problems in second row condition')
+                for step in range(pressed_list[second_press][row], pressed_list[first_press][row]+1):    
+                    if (step, last_point[column]) not in path:
+                        line.append((step, last_point[column]))    
+                        print('skipped')
                 path+=sorted(line, reverse=True)
 
-            print(f"Points: {pressed_list}\nPath:\n{path}") 
+            print(f"Points: {pressed_list}\nPath:\n{path}")
+
+            print(f"\n\n\nPoints: {pressed_list}\nPath:\n{path}\n\n\n") 
             for step in step_list: 
                 if step in path:
                     trellis.pixels[step] = ACTIVE_COLOR
