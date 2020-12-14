@@ -135,6 +135,11 @@ while True:
 
     if sequence_length>0:
         trellis.pixels[path[step_number]] = CURRENT_NOTE_COLOR
+        #convert step to alpha numeric character then print
+        ##### ENABLE WHEN DONE TROUBLESHOOTING ############
+        #keyboard_layout.write(key_chars[path[step_number][0]*8+path[step_number][1]])
+        #print(key_chars[path[step_number][0]*8+path[step_number][1]])
+
         if previous_step_number<100:
             trellis.pixels[path[previous_step_number]] = ACTIVE_COLOR
         previous_step_number=step_number
@@ -196,6 +201,13 @@ while True:
 
             print(f"Points: {pressed_list}\nPath:\n{path}")
 
+            #print(f"\n\n\nPoints: {pressed_list}\nPath:{path}\n\n\n") 
+            #for step in step_list: 
+            ##    if trellis.pixels[step] !=CURRENT_NOTE_COLOR:
+             #       if step in path:
+            #            trellis.pixels[step] = ACTIVE_COLOR
+            #        else:
+            #            trellis.pixels[step] = INACTIVE_COLOR
   
             if path != previous_path:
                 print('path changed')
