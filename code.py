@@ -11,8 +11,7 @@ from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
 
-row=0
-column=1
+
 
 midiuart = busio.UART(board.SDA, board.SCL, baudrate=31250)
 
@@ -28,7 +27,7 @@ with open ("settings.txt", "r") as myfile:
 time.sleep(1)  # Sleep for a bit to avoid a race condition on some systems
 keyboard = Keyboard(usb_hid.devices)
 keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
-tempo = 120
+tempo = 400
   # Starting BPM
 # You can use the accelerometer to speed/slow down tempo by tilting!
 ENABLE_TILT_TEMPO = False
@@ -48,6 +47,7 @@ DRUM_COLOR = ((120, 0, 255),
               (120, 0, 255))
 ACTIVE_COLOR = (120, 0, 255)
 INACTIVE_COLOR = (0, 0, 120)
+CURRENT_NOTE_COLOR=(120, 0, 60)
 
 # the color for the sweeping ticker bar
 TICKER_COLOR = (0, 0, 255)
@@ -111,31 +111,42 @@ previous_step_row=[0, 0, 0, 0]
 cycle_count=0
 dividend_list=[[1, 1, 1, 1], [1, 1, 1, 2], [1, 1, 2, 4], [1, 2, 4, 8]]
 idle_count=0
-
+pressed_list=[]
+#step_list=[]
+previous_step_list=[]
+step_number=0
+sequence_length=0
+previous_path=[]
+path=[]
+previous_step_number=1000
+row=0
+column=1
+for step in step_list: 
+    trellis.pixels[step] = INACTIVE_COLOR
 ###########################################################################################
-################ Everything above executes a single time on startup'#######################
-###############################Everything below repeats on a loop##########################
+################ Everything above executes a single time on startup #######################
+######################## Everything below repeats on a loop ###############################
 ###########################################################################################
 
 while True:
     #print(idle_count)
     idle_count+=1
     stamp = time.monotonic()
-    # redraw the last step to remove the ticker bar (e.g. 'normal' view)
-    #print(data[0])
+
+    if sequence_length>0:
+        trellis.pixels[path[step_number]] = CURRENT_NOTE_COLOR
+        if previous_step_number<100:
+            trellis.pixels[path[previous_step_number]] = ACTIVE_COLOR
+        previous_step_number=step_number
+        step_number+=1
+        if step_number>=sequence_length:
+            step_number=0
+
 
     # handle button presses while we're waiting for the next tempo beat
     while time.monotonic() - stamp < 60/tempo:
         # Check for pressed buttons
-        pressed = set(trellis.pressed_keys)
-        #disabled temporarily for troubleshooting, this is needed to have background color display on startup
-        #for step in step_list: 
-        #    if step in pressed:
-        #        trellis.pixels[step] = ACTIVE_COLOR
-        #    else:
-        #        trellis.pixels[step] = INACTIVE_COLOR
-     
-  
+        pressed = set(trellis.pressed_keys)   
         pressed_list=list(pressed)
         if len(pressed_list)>1:
             print(pressed_list)
@@ -148,15 +159,15 @@ while True:
             if pressed_list[first_press][column]==pressed_list[second_press][column]:
                 path.append(pressed_list[first_press])
                 pass
-                print('pass')
+                #print('pass')
             elif pressed_list[first_press][column]<pressed_list[second_press][column]:    
-                print('problems in first column condition')
+                #print('first column logic executed')
                 for step in range(pressed_list[first_press][column], pressed_list[second_press][column]+1):
                     line.append((pressed_list[first_press][row], step))
                 path=line
                 
             else:
-                print('problems in second column condition')
+                #print('second column logic executed')
                 for step in range(pressed_list[second_press][column], pressed_list[first_press][column]+1):
                     line.append((pressed_list[first_press][row], step))
                 path=sorted(line, reverse=True)
@@ -165,36 +176,38 @@ while True:
                 #print(last_point)
                 
                 
-            print(path)
             last_point=path[-1]
             line=[]
 
             if pressed_list[first_press][row] == pressed_list[second_press][row]:
                 pass
             elif pressed_list[first_press][row] < pressed_list[1][row]:
-                print('problems in first row condition')
+                #print('first row logic executed')
                 for step in range(pressed_list[first_press][row]+1, pressed_list[second_press][row]+1):
                     line.append((step, pressed_list[second_press][column]))
                 path+=line
                 
             else:
-                print('problems in second row condition')
+                #print('second row logic executed')
                 for step in range(pressed_list[second_press][row], pressed_list[first_press][row]+1):    
                     if (step, last_point[column]) not in path:
                         line.append((step, last_point[column]))    
-                        print('skipped')
                 path+=sorted(line, reverse=True)
 
             print(f"Points: {pressed_list}\nPath:\n{path}")
 
-            print(f"\n\n\nPoints: {pressed_list}\nPath:\n{path}\n\n\n") 
-            for step in step_list: 
-                if step in path:
-                    trellis.pixels[step] = ACTIVE_COLOR
-                else:
-                    trellis.pixels[step] = INACTIVE_COLOR
   
-  
-  
+            if path != previous_path:
+                print('path changed')
+                sequence_length=len(path)
+                step_number=0
+                previous_path=path
+                #re
+                for step in step_list:
+                    if step not in path:
+                        trellis.pixels[step] = INACTIVE_COLOR
+                    else:
+                        trellis.pixels[step] = ACTIVE_COLOR
+                previous_step_number=1000
   
         time.sleep(0.1)  # a little delay here helps avoid debounce annoyances
