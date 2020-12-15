@@ -27,7 +27,7 @@ with open ("settings.txt", "r") as myfile:
 time.sleep(1)  # Sleep for a bit to avoid a race condition on some systems
 keyboard = Keyboard(usb_hid.devices)
 keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
-tempo = 400
+tempo = 120
   # Starting BPM
 # You can use the accelerometer to speed/slow down tempo by tilting!
 ENABLE_TILT_TEMPO = False
@@ -121,7 +121,7 @@ path=[]
 previous_step_number=1000
 row=0
 column=1
-for step in step_list: 
+for step in step_list:
     trellis.pixels[step] = INACTIVE_COLOR
 ###########################################################################################
 ################ Everything above executes a single time on startup #######################
@@ -151,7 +151,7 @@ while True:
     # handle button presses while we're waiting for the next tempo beat
     while time.monotonic() - stamp < 60/tempo:
         # Check for pressed buttons
-        pressed = set(trellis.pressed_keys)   
+        pressed = set(trellis.pressed_keys)
         pressed_list=list(pressed)
         if len(pressed_list)>1:
             print(pressed_list)
@@ -165,22 +165,22 @@ while True:
                 path.append(pressed_list[first_press])
                 pass
                 #print('pass')
-            elif pressed_list[first_press][column]<pressed_list[second_press][column]:    
+            elif pressed_list[first_press][column]<pressed_list[second_press][column]:
                 #print('first column logic executed')
                 for step in range(pressed_list[first_press][column], pressed_list[second_press][column]+1):
                     line.append((pressed_list[first_press][row], step))
                 path=line
-                
+
             else:
                 #print('second column logic executed')
                 for step in range(pressed_list[second_press][column], pressed_list[first_press][column]+1):
                     line.append((pressed_list[first_press][row], step))
                 path=sorted(line, reverse=True)
-                
+
                 #last_point=(pressed_list[first_press][row], step)
                 #print(last_point)
-                
-                
+
+
             last_point=path[-1]
             line=[]
 
@@ -191,24 +191,24 @@ while True:
                 for step in range(pressed_list[first_press][row]+1, pressed_list[second_press][row]+1):
                     line.append((step, pressed_list[second_press][column]))
                 path+=line
-                
+
             else:
                 #print('second row logic executed')
-                for step in range(pressed_list[second_press][row], pressed_list[first_press][row]+1):    
+                for step in range(pressed_list[second_press][row], pressed_list[first_press][row]+1):
                     if (step, last_point[column]) not in path:
-                        line.append((step, last_point[column]))    
+                        line.append((step, last_point[column]))
                 path+=sorted(line, reverse=True)
 
             print(f"Points: {pressed_list}\nPath:\n{path}")
 
-            #print(f"\n\n\nPoints: {pressed_list}\nPath:{path}\n\n\n") 
-            #for step in step_list: 
+            #print(f"\n\n\nPoints: {pressed_list}\nPath:{path}\n\n\n")
+            #for step in step_list:
             ##    if trellis.pixels[step] !=CURRENT_NOTE_COLOR:
              #       if step in path:
             #            trellis.pixels[step] = ACTIVE_COLOR
             #        else:
             #            trellis.pixels[step] = INACTIVE_COLOR
-  
+
             if path != previous_path:
                 print('path changed')
                 sequence_length=len(path)
@@ -221,5 +221,5 @@ while True:
                     else:
                         trellis.pixels[step] = ACTIVE_COLOR
                 previous_step_number=1000
-  
+
         time.sleep(0.1)  # a little delay here helps avoid debounce annoyances
