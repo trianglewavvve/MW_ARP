@@ -139,8 +139,8 @@ while True:
         trellis.pixels[path[step_number]] = CURRENT_NOTE_COLOR
         #convert step to alpha numeric character then print
         ##### ENABLE WHEN DONE TROUBLESHOOTING ############
-        #keyboard_layout.write(key_chars[path[step_number][0]*8+path[step_number][1]])
-        #print(key_chars[path[step_number][0]*8+path[step_number][1]])
+        keyboard_layout.write(key_chars[path[step_number][0]*8+path[step_number][1]])
+        print(key_chars[path[step_number][0]*8+path[step_number][1]])
 
         if previous_step_number<100:
             trellis.pixels[path[previous_step_number]] = ACTIVE_COLOR
@@ -148,12 +148,16 @@ while True:
         step_number+=1
         if step_number>=sequence_length:
             step_number=0
-    if single_note_pressed:
+    if trellis.pixels[single_note_pressed] == ACTIVE_COLOR:
         #play sound here
+        keyboard_layout.write(key_chars[single_note_pressed[0]*8+single_note_pressed[1]])
         print(single_note_pressed)
+        pass
     else:
         pass
-    # handle button presses while we're waiting for the next tempo beat
+        
+    #####################################################################
+    # handle button presses while we're waiting for the next tempo beat #
     while time.monotonic() - stamp < 60/tempo:
         # Check for pressed buttons
         pressed = set(trellis.pressed_keys)
