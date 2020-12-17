@@ -121,6 +121,8 @@ path=[]
 previous_step_number=1000
 row=0
 column=1
+single_note_pressed=False
+single_note_pressed=(0,0)
 for step in step_list:
     trellis.pixels[step] = INACTIVE_COLOR
 ###########################################################################################
@@ -146,14 +148,27 @@ while True:
         step_number+=1
         if step_number>=sequence_length:
             step_number=0
-
-
+    if single_note_pressed:
+        #play sound here
+        print(single_note_pressed)
+    else:
+        pass
     # handle button presses while we're waiting for the next tempo beat
     while time.monotonic() - stamp < 60/tempo:
         # Check for pressed buttons
         pressed = set(trellis.pressed_keys)
         pressed_list=list(pressed)
-        if len(pressed_list)>1:
+        if len(pressed_list)==0:
+            if single_note_pressed not in path:
+                trellis.pixels[single_note_pressed] = INACTIVE_COLOR
+        elif len(pressed_list)==1:
+            single_note_pressed=pressed_list[0]
+            trellis.pixels[single_note_pressed] = ACTIVE_COLOR
+
+        elif len(pressed_list)>1:
+            if single_note_pressed not in path:
+                trellis.pixels[single_note_pressed] = INACTIVE_COLOR
+
             print(pressed_list)
             line=[]
             path=[]
@@ -201,13 +216,6 @@ while True:
 
             print(f"Points: {pressed_list}\nPath:\n{path}")
 
-            #print(f"\n\n\nPoints: {pressed_list}\nPath:{path}\n\n\n")
-            #for step in step_list:
-            ##    if trellis.pixels[step] !=CURRENT_NOTE_COLOR:
-             #       if step in path:
-            #            trellis.pixels[step] = ACTIVE_COLOR
-            #        else:
-            #            trellis.pixels[step] = INACTIVE_COLOR
 
             if path != previous_path:
                 print('path changed')
