@@ -140,10 +140,11 @@ while True:
     step_count+=1
     stamp = time.monotonic()
 
-    if trellis.pixels[single_note_pressed] == ACTIVE_COLOR:
-        #play sound here
-        #keyboard_layout.write(key_chars[single_note_pressed[0]*8+single_note_pressed[1]])
-        print(single_note_pressed)
+    if single_note_pressed not in path:
+        if trellis.pixels[single_note_pressed] == ACTIVE_COLOR:
+            #play sound here
+            keyboard_layout.write(key_chars[single_note_pressed[0]*8+single_note_pressed[1]])
+            print(single_note_pressed)
         
     
     if step_count>=sequence_length*3+1:
