@@ -126,8 +126,7 @@ previous_step_number=1000
 row=0
 column=1
 step_log_temp=[]
-single_note_pressed=False
-single_note_pressed=(0,0)
+single_note_pressed=(3,7)
 for step in step_list:
     trellis.pixels[step] = INACTIVE_COLOR
 ###########################################################################################
@@ -143,14 +142,13 @@ while True:
 
     if trellis.pixels[single_note_pressed] == ACTIVE_COLOR:
         #play sound here
-        keyboard_layout.write(key_chars[single_note_pressed[0]*8+single_note_pressed[1]])
+        #keyboard_layout.write(key_chars[single_note_pressed[0]*8+single_note_pressed[1]])
         print(single_note_pressed)
-        pass
-    else:
-        pass
         
     
     if step_count>=sequence_length*3+1:
+        step_count=0
+        previous_path=path
         path=[]
         sequence_length=len(path)
         for step in step_list:
@@ -161,7 +159,7 @@ while True:
         #convert step to alpha numeric character then print
         ##### ENABLE WHEN DONE TROUBLESHOOTING ############
         keyboard_layout.write(key_chars[path[step_number][0]*8+path[step_number][1]])
-        print(key_chars[path[step_number][0]*8+path[step_number][1]])
+        print(key_chars[path[step_number][0]*8+path[step_number][1]], '\n')
         step_log_temp.append(path[step_number])
         if previous_step_number<100:
             trellis.pixels[path[previous_step_number]] = ACTIVE_COLOR
@@ -176,7 +174,7 @@ while True:
     ####################################################           
             
     if sequence_length>0:
-        if (step_count+1)%3==0:
+        if (step_count)%3==0:
             trellis.pixels[path[divided_step_number]] = SECOND_NOTE_COLOR
             #convert step to alpha numeric character then print
             ##### ENABLE WHEN DONE TROUBLESHOOTING ############
@@ -207,8 +205,9 @@ while True:
             if single_note_pressed not in path:
                 trellis.pixels[single_note_pressed] = INACTIVE_COLOR
         elif len(pressed_list)==1:
-            single_note_pressed=pressed_list[0]
-            trellis.pixels[single_note_pressed] = ACTIVE_COLOR
+            if pressed_list[0] not in path:
+                single_note_pressed=pressed_list[0]
+                trellis.pixels[single_note_pressed] = ACTIVE_COLOR
 
         elif len(pressed_list)>1:
             if single_note_pressed not in path:
@@ -259,7 +258,7 @@ while True:
                         line.append((step, last_point[column]))
                 path+=sorted(line, reverse=True)
 
-            print(f"Points: {pressed_list}\nPath:\n{path}")
+            print(f"Points: {pressed_list}\nPath:\n{path}\nlength: {sequence_length}")
 
 
             if path != previous_path:
