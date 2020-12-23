@@ -5,7 +5,6 @@ import busio
 import audioio
 import adafruit_fancyled.adafruit_fancyled as fancy
 import adafruit_trellism4
-import adafruit_adxl34x
 import usb_hid
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
@@ -27,7 +26,7 @@ with open ("settings.txt", "r") as myfile:
 time.sleep(1)  # Sleep for a bit to avoid a race condition on some systems
 keyboard = Keyboard(usb_hid.devices)
 keyboard_layout = KeyboardLayoutUS(keyboard)  # We're in the US :)
-tempo = 120
+tempo = 240
   # Starting BPM
 # You can use the accelerometer to speed/slow down tempo by tilting!
 ENABLE_TILT_TEMPO = False
@@ -48,6 +47,8 @@ DRUM_COLOR = ((120, 0, 255),
 ACTIVE_COLOR = (120, 0, 255)
 INACTIVE_COLOR = (0, 0, 120)
 CURRENT_NOTE_COLOR=(120, 0, 60)
+SECOND_NOTE_COLOR=(120, 0, 30)
+
 
 # the color for the sweeping ticker bar
 TICKER_COLOR = (0, 0, 255)
@@ -115,12 +116,16 @@ pressed_list=[]
 #step_list=[]
 previous_step_list=[]
 step_number=0
+step_count=0
+divided_step_number=0
+previous_divided_step_number=0
 sequence_length=0
 previous_path=[]
 path=[]
 previous_step_number=1000
 row=0
 column=1
+step_log_temp=[]
 single_note_pressed=False
 single_note_pressed=(0,0)
 for step in step_list:
@@ -133,21 +138,9 @@ for step in step_list:
 while True:
     #print(idle_count)
     idle_count+=1
+    step_count+=1
     stamp = time.monotonic()
 
-    if sequence_length>0:
-        trellis.pixels[path[step_number]] = CURRENT_NOTE_COLOR
-        #convert step to alpha numeric character then print
-        ##### ENABLE WHEN DONE TROUBLESHOOTING ############
-        keyboard_layout.write(key_chars[path[step_number][0]*8+path[step_number][1]])
-        print(key_chars[path[step_number][0]*8+path[step_number][1]])
-
-        if previous_step_number<100:
-            trellis.pixels[path[previous_step_number]] = ACTIVE_COLOR
-        previous_step_number=step_number
-        step_number+=1
-        if step_number>=sequence_length:
-            step_number=0
     if trellis.pixels[single_note_pressed] == ACTIVE_COLOR:
         #play sound here
         keyboard_layout.write(key_chars[single_note_pressed[0]*8+single_note_pressed[1]])
@@ -156,6 +149,54 @@ while True:
     else:
         pass
         
+    
+    if step_count>=sequence_length*3+1:
+        path=[]
+        sequence_length=len(path)
+        for step in step_list:
+            trellis.pixels[step] = INACTIVE_COLOR
+
+    if sequence_length>0:
+        trellis.pixels[path[step_number]] = CURRENT_NOTE_COLOR
+        #convert step to alpha numeric character then print
+        ##### ENABLE WHEN DONE TROUBLESHOOTING ############
+        keyboard_layout.write(key_chars[path[step_number][0]*8+path[step_number][1]])
+        print(key_chars[path[step_number][0]*8+path[step_number][1]])
+        step_log_temp.append(path[step_number])
+        if previous_step_number<100:
+            trellis.pixels[path[previous_step_number]] = ACTIVE_COLOR
+        previous_step_number=step_number
+        step_number+=1
+        if step_number>=sequence_length:
+            step_number=0
+            #print(f'Step Log: {step_log_temp}')
+            step_log_temp=[]
+    ####################################################
+    ################ Second Path #######################
+    ####################################################           
+            
+    if sequence_length>0:
+        if (step_count+1)%3==0:
+            trellis.pixels[path[divided_step_number]] = SECOND_NOTE_COLOR
+            #convert step to alpha numeric character then print
+            ##### ENABLE WHEN DONE TROUBLESHOOTING ############
+            keyboard_layout.write(key_chars[path[divided_step_number][0]*8+path[divided_step_number][1]])
+            print(key_chars[path[divided_step_number][0]*8+path[divided_step_number][1]])
+
+            if previous_divided_step_number<100:
+                if previous_divided_step_number!=previous_step_number:
+                    trellis.pixels[path[previous_divided_step_number]] = ACTIVE_COLOR
+            previous_divided_step_number=divided_step_number
+            divided_step_number+=1
+            if divided_step_number>=sequence_length:
+                divided_step_number=0           
+            
+                
+            
+            
+            
+            
+
     #####################################################################
     # handle button presses while we're waiting for the next tempo beat #
     while time.monotonic() - stamp < 60/tempo:
@@ -233,5 +274,9 @@ while True:
                     else:
                         trellis.pixels[step] = ACTIVE_COLOR
                 previous_step_number=1000
+                previous_divided_step_number=1000
+                step_count=0
+                step_log_temp=[]
+            
 
         time.sleep(0.1)  # a little delay here helps avoid debounce annoyances
